@@ -1,24 +1,21 @@
 //-----------------------------
-// #region Setup
+//#region Setup
 //-----------------------------
 const express = require("express");
 const app = express();
 const db = require("./db");
+const record = require('node-record-lpcm16');
+const bodyParser = require('body-parser');
 const PORT = 4000;
 //#endregion Setup
 
 //-----------------------------
 //#region App Config
 //-----------------------------
-// https://stackoverflow.com/questions/23259168/what-are-express-json-and-express-urlencoded
-// Middleware that parses POST / PUT requests from a client
 app.use(express.json());
+app.use(bodyParser.json());
 
-// Handle CORS w/ client
-// For more information about CORS (Cross-Origin Resource Sharing):
-// https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
 app.use((req, res, next) => {
-  // Allow access from multiple origins
   const allowedOrigins = [
     "http://localhost:8080",
   ];
@@ -26,11 +23,8 @@ app.use((req, res, next) => {
   if (allowedOrigins.includes(origin)) {
     res.setHeader("Access-Control-Allow-Origin", origin);
   }
-  // Allow specific requests
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-
-  // Pass to next layer of middleware
   next();
 });
 //#endregion App Config
@@ -42,20 +36,45 @@ app.get("/", (req, res) => {
   res.json({ info: "Demo app for sqlite3" });
 });
 
-// This endpoint allows a client to get a single user by id
 app.get("/user/:id", db.getUserById);
 
-// ------ FILL IN BELOW -------
-// Write endpoints that allow a client to:
-
-// Get all users
 app.get("/users", db.getAllUsers);
-// Create a new user
 app.post("/user", db.createUser);
-// Update a user's name, given an id
 app.put("/user/:id", db.updateUserName);
-// Delete a user by id
 app.delete("/user/:id", db.deleteUser);
+
+// New route for capturing microphone input and storing it as BLOB
+app.post("/captureAudio", (request, response) => {
+  const { id } = request.body;
+
+  const capture = record.start({
+    sampleRate: 44100,
+    verbose: true,
+    silence: '5.0',
+  });
+
+  let audioBuffer = Buffer.from([]);
+
+  capture
+    .on('data', (chunk) => {
+      audioBuffer = Buffer.concat([audioBuffer, chunk]);
+    })
+    .on('end', () => {
+      const query = 'INSERT INTO audioData (ID, AudioData) VALUES (?, ?)';
+      
+      db.run(query, [id, audioBuffer], function (error) {
+        if (error) {
+          console.error(error.message);
+          response.status(400).json({ error: error.message });
+          return;
+        }
+        
+        response.json({ id });
+      });
+
+      record.stop();
+    });
+});
 //#endregion Database Routes
 
 //-----------------------------
