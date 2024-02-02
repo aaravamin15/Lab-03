@@ -42,14 +42,13 @@ app.post("/user", db.createAudioData);
 app.put("/user/:id", db.updateAudioData);
 app.delete("/user/:id", db.deleteAudioData);
 
-// New route for capturing microphone input and storing it as BLOB
+// This definetly does not work
 app.post('/captureAudio', (req, res) => {
   const { id } = req.body;
 
-  // Simulating audio data (replace this with actual audio data)
+  // Simulating audio data will replace this with actual audio data
   const simulatedAudioData = 'Sample audio data';
 
-  // Convert simulated audio data to Buffer
   const audioBuffer = Buffer.from(simulatedAudioData);
 
   const query = 'INSERT INTO audioData (ID, AudioData) VALUES (?, ?)';
