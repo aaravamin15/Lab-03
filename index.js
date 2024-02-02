@@ -4,15 +4,16 @@
 const express = require("express");
 const app = express();
 const db = require("./db");
-const record = require('node-record-lpcm16');
 const bodyParser = require('body-parser');
 const PORT = 4000;
+
 //#endregion Setup
 
 //-----------------------------
 //#region App Config
 //-----------------------------
 app.use(express.json());
+app.use(express.urlencoded({ extended: true })); // Add this line for URL-encoded data
 app.use(bodyParser.json());
 
 app.use((req, res, next) => {
@@ -33,46 +34,34 @@ app.use((req, res, next) => {
 //#region Database Routes
 //-----------------------------
 app.get("/", (req, res) => {
-  res.json({ info: "Demo app for sqlite3" });
+  res.json({ info: "AudioData App" });
 });
 
-
-app.get("/audio", db.getAudioDataById);
-// app.post("/user", db.createUser);
-// app.put("/user/:id", db.updateUserName);
-// app.delete("/user/:id", db.deleteUser);
+app.get("/audio/:id", db.getAudioDataById);
+app.post("/user", db.createAudioData);
+app.put("/user/:id", db.updateAudioData);
+app.delete("/user/:id", db.deleteAudioData);
 
 // New route for capturing microphone input and storing it as BLOB
-app.post("/captureAudio", (request, response) => {
-  const { id } = request.body;
+app.post('/captureAudio', (req, res) => {
+  const { id } = req.body;
 
-  const capture = record.start({
-    sampleRate: 44100,
-    verbose: true,
-    silence: '5.0',
+  // Simulating audio data (replace this with actual audio data)
+  const simulatedAudioData = 'Sample audio data';
+
+  // Convert simulated audio data to Buffer
+  const audioBuffer = Buffer.from(simulatedAudioData);
+
+  const query = 'INSERT INTO audioData (ID, AudioData) VALUES (?, ?)';
+
+  db.run(query, [id, audioBuffer], (error) => {
+    if (error) {
+      console.error(error.message);
+      return res.status(400).json({ error: error.message });
+    }
+
+    res.json({ id });
   });
-
-  let audioBuffer = Buffer.from([]);
-
-  capture
-    .on('data', (chunk) => {
-      audioBuffer = Buffer.concat([audioBuffer, chunk]);
-    })
-    .on('end', () => {
-      const query = 'INSERT INTO audioData (ID, AudioData) VALUES (?, ?)';
-      
-      db.run(query, [id, audioBuffer], function (error) {
-        if (error) {
-          console.error(error.message);
-          response.status(400).json({ error: error.message });
-          return;
-        }
-        
-        response.json({ id });
-      });
-
-      record.stop();
-    });
 });
 //#endregion Database Routes
 

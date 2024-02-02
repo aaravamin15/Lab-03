@@ -2,16 +2,34 @@
 //#region Database Connection
 //-----------------------------
 const path = require("path");
-const sqlite = require("sqlite3").verbose();
 const dbFile = path.join(__dirname, "audioDatabase.db");
-const db = new sqlite.Database(dbFile, (error) => {
+const sqlite3 = require('sqlite3').verbose();
+const db = new sqlite3.Database(dbFile, (error) => {
   if (error) return console.error(error.message);
   console.log(`Connected to database ${dbFile}`);
+  
+  // Create the 'audioData' table if it doesn't exist
+  const createTableQuery = `
+    CREATE TABLE IF NOT EXISTS audioData (
+      ID INTEGER PRIMARY KEY,
+      AudioData BLOB
+    )
+  `;
+  
+  db.run(createTableQuery, (createTableError) => {
+    if (createTableError) {
+      console.error("Error creating table:", createTableError.message);
+    } else {
+      console.log("Table 'audioData' created successfully");
+    }
+  });
 });
+
+module.exports = db;
 
 const getAudioDataById = (request, response) => {
   const id = parseInt(request.params.id);
-  const query = `SELECT * FROM audioData WHERE ID = ?`;
+  const query = 'SELECT * FROM audioData WHERE ID = ?';
 
   db.get(query, [id], (error, result) => {
     if (error) {
@@ -77,7 +95,6 @@ const deleteAudioData = (request, response) => {
     }
   });
 };
-//#endregion Routes
 
 module.exports = {
   getAudioDataById,
