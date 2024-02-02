@@ -36,12 +36,11 @@ app.get("/", (req, res) => {
   res.json({ info: "Demo app for sqlite3" });
 });
 
-app.get("/user/:id", db.getUserById);
 
-app.get("/users", db.getAllUsers);
-app.post("/user", db.createUser);
-app.put("/user/:id", db.updateUserName);
-app.delete("/user/:id", db.deleteUser);
+app.get("/audio", db.getAudioDataById);
+// app.post("/user", db.createUser);
+// app.put("/user/:id", db.updateUserName);
+// app.delete("/user/:id", db.deleteUser);
 
 // New route for capturing microphone input and storing it as BLOB
 app.post("/captureAudio", (request, response) => {
